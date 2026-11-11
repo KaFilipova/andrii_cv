@@ -13,6 +13,7 @@ import { createConfigurator } from './stations/configurator'
 import { createMechanics } from './stations/mechanics'
 import { createTradeoffs } from './stations/tradeoffs'
 import { createLuciad } from './stations/luciad'
+import { createPerf } from './stations/perf'
 import { createRealtime } from './stations/realtime'
 import { createHowIWork } from './stations/howiwork'
 import { createContact } from './stations/contact'
@@ -26,6 +27,7 @@ const FACTORIES: Record<string, StationFactory> = {
   mechanics: createMechanics,
   tradeoffs: createTradeoffs,
   luciad: createLuciad,
+  perf: createPerf,
   realtime: createRealtime,
   howiwork: createHowIWork,
   contact: createContact,

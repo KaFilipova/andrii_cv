@@ -15,6 +15,7 @@ const DAILY = [
   'TypeScript',
   'React',
   'WebGL',
+  'LuciadRIA',
   'zustand',
   'Vite',
   'Node.js',
@@ -24,6 +25,7 @@ const DAILY = [
 const REACH = [
   'React Three Fiber',
   'Vue 3',
+  'Angular',
   'Next.js',
   'Pixi.js',
   'three-mesh-bvh',
@@ -37,7 +39,7 @@ const REACH = [
 ]
 
 /**
- * Two orbits around a core: the inner one is what I touch daily, the outer one
+ * Two orbits around a core: the inner one is the hands-on work, the outer one
  * is what the project decides. Labels billboard so the ring reads from any
  * camera angle; the station is the one the viewer may drag.
  */
@@ -110,7 +112,7 @@ export const createStack: StationFactory = (anchor) => {
   }
 
   buildOrbit(DAILY, 3.4, 0, PALETTE.accent, 0.26, 0.09)
-  buildOrbit(REACH, 5.8, 0.26, PALETTE.steel, 0.2, 0.07)
+  buildOrbit(REACH, 5.4, 0.26, PALETTE.steel, 0.2, 0.07)
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.5)
   group.add(ambient)
@@ -123,7 +125,7 @@ export const createStack: StationFactory = (anchor) => {
   return {
     id: 'stack',
     group,
-    bias: -7.2,
+    bias: -6.5,
     shot: {
       position: anchor.clone().add(new THREE.Vector3(0, 5.6, 21)),
       target: anchor.clone(),

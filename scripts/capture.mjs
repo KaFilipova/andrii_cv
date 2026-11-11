@@ -16,7 +16,8 @@
  */
 import { spawn } from 'node:child_process'
 import { mkdirSync, readFileSync, writeFileSync, existsSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { tmpdir } from 'node:os'
+import { join, resolve } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 const args = process.argv.slice(2)
@@ -116,7 +117,9 @@ const browser = spawn(
     '--no-first-run',
     '--no-default-browser-check',
     `--remote-debugging-port=${port}`,
-    `--user-data-dir=${resolve(outDir, '.chrome-profile')}`,
+    // Outside the repo. A Chrome profile is several hundred files, and
+    // writing it next to the output buries every real change in the diff.
+    `--user-data-dir=${join(tmpdir(), 'cv-deck-capture-profile')}`,
     'about:blank',
   ],
   { stdio: 'ignore' },

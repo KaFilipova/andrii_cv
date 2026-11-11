@@ -1,5 +1,7 @@
 node_modules/
 dist/
+tsconfig.tsbuildinfo
+
+# Screenshots are build output: regenerate them with `npm run shots`.
 shots/
-*.tsbuildinfo
-.DS_Store
+shots-phone/

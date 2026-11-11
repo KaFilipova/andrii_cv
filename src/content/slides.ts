@@ -59,12 +59,12 @@ export const SLIDES: Slide[] = [
     nav: 'Title',
     kicker: 'Interview presentation',
     title: 'Andrii <em>Filipov</em>',
-    lead: 'Frontend Engineer — interactive 3D configurators, geospatial scenes and real-time interfaces.',
+    lead: 'Frontend Engineer — real-time 3D in the browser: configurators, geospatial scenes, and the performance work that keeps a large scene interactive.',
     align: 'center',
     metrics: [
       { value: 'Three.js / WebGL', label: 'Rendering layer, hands-on' },
-      { value: 'React · Vue 3 · TS', label: 'Application layer' },
-      { value: 'Node.js · WS', label: 'Where the frontend ends' },
+      { value: 'Frame budget', label: 'Draw calls, memory, large scenes' },
+      { value: 'TypeScript · Node.js', label: 'Application and service layer' },
     ],
     note: 'Press → or scroll to move through the scene. Every section is a place in one 3D world, not a separate slide.',
   },
@@ -85,12 +85,12 @@ export const SLIDES: Slide[] = [
       {
         title: 'The rendering layer first-hand',
         body:
-          'Three.js, WebGL and Pixi.js directly — not only through wrappers. I can explain what a frame costs and why.',
+          'Three.js, WebGL, LuciadRIA and Pixi.js directly — not only through wrappers. I can explain what a frame costs and why.',
       },
       {
-        title: 'Architecture, not just features',
+        title: 'Architecture, and the performance that follows from it',
         body:
-          'I owned the design of the configurator core: where the truth lives, which layer may import three.js, how an edit becomes a request.',
+          'I owned the design of the configurator core — where the truth lives, which layer may import three.js, how an edit becomes a request. Most frame-rate problems in a large scene are decided there, long before the renderer sees them.',
       },
       {
         title: 'End-to-end when it is needed',
@@ -106,24 +106,24 @@ export const SLIDES: Slide[] = [
     kicker: '02 · Stack',
     title: 'What I actually <em>work with</em>',
     lead:
-      'Grouped by what it is for, not by how it looks on a CV. The inner ring is daily, the outer ring is what I reach for when the project asks for it.',
+      'Grouped by what it is for, not by how it looks on a CV. The inner ring is what I work in hands-on, the outer ring is what I reach for when the project asks for it.',
     align: 'right',
     bullets: [
       {
         title: 'Graphics and real-time',
-        body: 'Three.js, React Three Fiber, WebGL, Pixi.js, three-mesh-bvh, WebSockets, Socket.io, WebRTC.',
+        body: 'Three.js, LuciadRIA, React Three Fiber, WebGL, Pixi.js, three-mesh-bvh, WebSockets, Socket.io, WebRTC.',
       },
       {
         title: 'Application',
-        body: 'TypeScript, React, Next.js, Vue 3, Zustand, Redux, Pinia, MobX, Tailwind, MUI, Vuetify.',
+        body: 'TypeScript, React, Next.js, Vue 3, Angular, Zustand, Redux, Pinia, MobX, Tailwind, MUI, Vuetify.',
       },
       {
         title: 'Beyond the browser',
-        body: 'Node.js, REST APIs, PostgreSQL, MongoDB, background jobs and workers, Chrome Extensions, React Native.',
+        body: 'Node.js, REST APIs, WebSocket services, PostgreSQL, MongoDB, S3-compatible storage, background jobs and workers.',
       },
       {
         title: 'Tooling',
-        body: 'Vite, Webpack, Git, Docker — and AI coding agents used with written specs and project rules.',
+        body: 'Vite, Webpack, Git and GitLab, Docker — and AI coding agents used with written specs and project rules.',
       },
     ],
     interaction: 'Drag to orbit the stack',
@@ -157,9 +157,85 @@ export const SLIDES: Slide[] = [
   },
 
   {
+    id: 'luciad',
+    nav: 'Geospatial',
+    kicker: '04 · Deep dive · Geospatial',
+    title: 'Real buildings on a <em>scanned</em> city',
+    lead:
+      'Work with LuciadRIA: a scanned, georeferenced city as the base layer, and complete 3D building objects placed onto its territory — exactly where the client needs them, at coordinates that hold up against survey data.',
+    metrics: [
+      { value: 'Survey base', label: 'Scanned city mesh, not a decorative map' },
+      { value: 'Geodetic', label: 'Placement in real reference coordinates' },
+      { value: 'Large extents', label: 'Point clouds, meshes, real coordinate spaces' },
+    ],
+    bullets: [
+      {
+        title: 'The map is evidence, not decoration',
+        body:
+          'The base layer is scanned reality, so a placement can be checked against the ground rather than against a rendering of it.',
+      },
+      {
+        title: 'Point clouds are data, and data has a size',
+        body:
+          'A scanned city arrives as photogrammetry and point clouds, not as geometry somebody authored. That changes the whole job: decimation and tiling decide what is on screen, and the float32 pipeline in the browser decides how far from the origin you can go before a building starts shimmering.',
+      },
+      {
+        title: 'Defensible, not merely plausible',
+        body:
+          'The coordinate system, the units and the tolerance are decided once and written down. The next three sections show the same discipline applied to a product catalogue instead of a city.',
+      },
+    ],
+    // TODO before the interview — NOT rendered, and must stay that way:
+    // confirm the client name, the period and the exact scope of this
+    // engagement, then say them out loud rather than putting them on the
+    // slide. The note below is deliberately free of unverified specifics.
+    note:
+      'LuciadRIA over a scanned city model — geodetic placement, buildings carried as full 3D geometry rather than symbols on a map.',
+    interaction: 'Buildings drop onto the grid',
+  },
+
+  {
+    id: 'perf',
+    nav: 'Performance',
+    kicker: '05 · Deep dive · Performance',
+    title: 'A large scene is a <em>budget</em> problem',
+    lead:
+      'Sixteen point six milliseconds, and four places they go. Optimisation starts with knowing which of the four is the long one — every decision below came from a measurement, not from a list of best practices.',
+    align: 'right',
+    metrics: [
+      { value: '2 200 → 1', label: 'Objects in the field, draw calls issued' },
+      { value: '16.6 ms', label: 'The whole budget, split four ways' },
+          ],
+    bullets: [
+      {
+        title: 'Batch before you optimise anything else',
+        body:
+          'State changes cost more than triangles. Catalogue parts that share a material become one instanced draw; the field on screen is 2 200 objects and one call. Nothing else in a scene this size pays back as reliably.',
+      },
+      {
+        title: 'Never touch what is not on screen',
+        body:
+          'Cull by distance and by view, and keep the test cheap — a cached scalar per object, not a matrix decompose per frame. The deck you are looking at drops a whole station past its cull radius.',
+      },
+      {
+        title: 'Spatial structures, and the memory they cost',
+        body:
+          'three-mesh-bvh instead of naive raycasts, built once per product root and warmed before the gesture starts, so a drag never pays for the tree mid-motion. The cost is memory — which is a frame budget too, since the leak that kills a long session never shows up in a thirty-second profile.',
+      },
+      {
+        title: 'WebGPU — where this is going',
+        body:
+          'I have not shipped WebGPU and will not claim otherwise. What I can discuss precisely is what it changes about the segments above: render bundles collapsing per-draw CPU cost, compute shaders taking culling and transforms off the main thread, explicit buffers removing the driver guesswork that makes a WebGL profile hard to read.',
+      },
+    ],
+    note: 'The figures on the bar are the stations in this deck, measured in Chrome. They are an illustration of method, not a benchmark of the production platform.',
+    interaction: 'Only what the wedge sees is shaded',
+  },
+
+  {
     id: 'configurator',
     nav: 'Configurator',
-    kicker: '04 · Deep dive · 3D configurator',
+    kicker: '06 · Deep dive · 3D configurator',
     title: 'A trade-fair stand, <em>assembled</em> in the browser',
     lead:
       'At AttractGroup I work on a configurator where a dealer lays out a full exhibition stand from a real manufacturer catalogue — in 3D, with live pricing, and with the guarantee that what they draw can actually be built.',
@@ -177,7 +253,7 @@ export const SLIDES: Slide[] = [
   {
     id: 'mechanics',
     nav: 'Rules',
-    kicker: '05 · Deep dive · How it holds together',
+    kicker: '07 · Deep dive · How it holds together',
     title: 'Three rules the whole thing <em>rests on</em>',
     lead: 'Each one is a single named place in the codebase. That is the point — two opinions about whether a part fits is two different applications.',
     bullets: [
@@ -203,7 +279,7 @@ export const SLIDES: Slide[] = [
   {
     id: 'tradeoffs',
     nav: 'Trade-offs',
-    kicker: '06 · Deep dive · Decisions',
+    kicker: '08 · Deep dive · Decisions',
     title: 'Every decision has a <em>cost</em>',
     lead: 'Naming the cost is the part that matters. These are the four I would defend in review.',
     align: 'right',
@@ -232,37 +308,9 @@ export const SLIDES: Slide[] = [
   },
 
   {
-    id: 'luciad',
-    nav: 'Geospatial',
-    kicker: '07 · Deep dive · Geospatial',
-    title: 'Real buildings on a <em>scanned</em> city',
-    lead:
-      'Work with LuciadRIA: a scanned, georeferenced city as the base layer, and complete 3D building objects placed onto its territory — exactly where the client needs them, at coordinates that hold up against survey data.',
-    metrics: [
-      { value: 'Survey base', label: 'Scanned city mesh, not a decorative map' },
-      { value: 'Geodetic', label: 'Placement in real reference coordinates' },
-      { value: 'Full objects', label: 'Whole buildings, not markers' },
-    ],
-    bullets: [
-      {
-        title: 'The map is evidence, not decoration',
-        body:
-          'The base layer is scanned reality, so a placement can be checked against the ground rather than against a rendering of it.',
-      },
-      {
-        title: 'The same discipline as the configurator',
-        body:
-          'A placement has to be defensible, not merely plausible — the coordinate system, the units and the tolerance are decided once and written down.',
-      },
-    ],
-    note: 'TODO — confirm client, period and the exact scope of this engagement before the interview.',
-    interaction: 'Buildings drop onto the grid',
-  },
-
-  {
     id: 'realtime',
     nav: 'Real-time',
-    kicker: '08 · Breadth',
+    kicker: '09 · Breadth',
     title: 'Where else I have done <em>this</em>',
     lead: 'Three earlier projects with the same shape: a live source of truth outside the browser, and an interface that has to stay in step with it.',
     align: 'right',
@@ -286,7 +334,7 @@ export const SLIDES: Slide[] = [
   {
     id: 'howiwork',
     nav: 'How I work',
-    kicker: '09 · Working style',
+    kicker: '10 · Working style',
     title: 'How I <em>work</em> today',
     lead: 'Fewer principles than most lists, because these are the ones I can show in the code.',
     bullets: [
@@ -314,7 +362,7 @@ export const SLIDES: Slide[] = [
     nav: 'Contact',
     kicker: 'Thank you',
     title: 'Happy to go <em>deeper</em> on any of this',
-    lead: 'The configurator, the geospatial work and the robot interface all have more detail than a slide holds. Ask, and I will open the part you care about.',
+    lead: 'The geospatial work, the configurator and the robot interface all have more detail than a slide holds. Ask, and I will open the part you care about.',
     align: 'center',
     contact: [
       { key: 'Email', value: PROFILE.email, href: `mailto:${PROFILE.email}` },

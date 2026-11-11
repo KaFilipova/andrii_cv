@@ -32,10 +32,16 @@ export const label = (text: string, options: LabelOptions = {}): Text => {
   t.anchorX = options.anchorX ?? 'center'
   t.anchorY = options.anchorY ?? 'middle'
   t.letterSpacing = options.letterSpacing ?? 0
-  t.material.transparent = true
-  t.material.opacity = options.opacity ?? 1
-  t.material.depthWrite = false
-  t.material.toneMapped = false
+  // troika hands back a *shared* default material when a Text has not been
+  // given one, so writing to `t.material` writes to every label in the deck.
+  // That is a silent, deck-wide bug the first time a station wants one label to
+  // behave differently — so each label owns its material from the start.
+  t.material = new THREE.MeshBasicMaterial({
+    transparent: true,
+    opacity: options.opacity ?? 1,
+    depthWrite: false,
+    toneMapped: false,
+  })
   if (options.maxWidth) t.maxWidth = options.maxWidth
   t.sync()
   return t

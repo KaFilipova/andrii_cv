@@ -84,12 +84,13 @@ because there is no room beside the text.
 | --- | --- | --- |
 | Title | `hero` | A core in three tilted rings — establishes the material language |
 | Who I am | `whoami` | Three monoliths with a scan sweep |
-| Stack | `stack` | Two orbits: daily inside, reach-for outside. Pointer nudges the spin |
+| Stack | `stack` | Two orbits: hands-on inside, reach-for outside. Pointer nudges the spin |
 | Career | `arc` | Bars grow out of a year rail on arrival |
+| Geospatial | `luciad` | A scanned city, three buildings dropping onto cleared plots with coordinates |
+| Performance | `perf` | 2 200 objects in one instanced draw, a view wedge sweeping the field, a 16.6 ms budget bar tracking underneath |
 | Configurator | `configurator` | A trade-fair stand assembling in catalogue order, ports flashing as joints close, running total climbing with it |
 | Rules | `mechanics` | Left: turn → twist → slide → seated. Right: flush is accepted, penetration is not |
 | Trade-offs | `tradeoffs` | Five layers, one pulse, travelling one way only |
-| Geospatial | `luciad` | A scanned city, three buildings dropping onto cleared plots with coordinates |
 | Real-time | `realtime` | A fuse-assembly arm on a pick-and-place loop, next to a monitoring wall |
 | How I work | `howiwork` | spec → agent → review → ship, with the loop back from review |
 | Contact | `contact` | The title core, opened out into five spokes |
@@ -137,13 +138,35 @@ phone screenshot a convincing lie.
   over-constrained. At `devicePixelRatio` 1 the buffer happens to match the
   viewport and nothing looks wrong, which is exactly why this survives a
   desktop review and breaks on every phone and retina laptop.
+- **Every label owns its material.** troika hands back a *shared* default
+  material when a `Text` has not been given one, so a station that tweaks
+  `label.material` is tweaking every label in the deck. `builders.label()`
+  assigns a fresh `MeshBasicMaterial` so that cannot happen; the day this was
+  missing, one depth-test change blanked the text on every station at once.
+- **The performance panel is placed from the frame, not from the world.**
+  `shotFor` pans the camera sideways by `bias` rather than rotating it, so a
+  point at world x = 0 drifts off-centre in proportion to how near it is. The
+  panel therefore projects the station, picks a point below it, and puts itself
+  on that ray — which also keeps it clear of the copy on a stacked layout.
 - **Labels are billboarded through the parent's world rotation**, not by copying
   the camera's quaternion — every station is rotated into its place on the ring,
   so the naive version leaves every label turned by the station's yaw.
 
 ## Before the interview
 
-- `src/content/slides.ts` carries a `TODO` on the geospatial slide: confirm the
-  client, the period and the exact scope of the LuciadRIA work.
+- `src/content/slides.ts` carries a `TODO` comment on the geospatial slide:
+  confirm the client, the period and the exact scope of the LuciadRIA work. It
+  is a comment rather than a rendered `note` on purpose — a reminder to the
+  author must never become a line the interviewer reads off the screen.
+- **Angular** is listed in the stack on the strength of "I think I worked with
+  it too". Remove it from `src/content/slides.ts` and
+  `src/scene/stations/stack.ts` unless a project can be named: an unverifiable
+  entry attracts the question precisely because it looks out of place.
 - The numbers on the configurator station (prices, booth size) are plausible
   placeholders chosen to make the total readable, not figures from the product.
+- The millisecond split on the performance station is measured from this deck,
+  and the slide says so. Do not let it be heard as a figure from a production
+  platform.
+- **WebGPU is stated as not-shipped, on purpose.** The role asks for it; the
+  slide answers with what it changes about the frame rather than with a claim.
+  That bullet is only worth having if the detail in it can be defended live.
