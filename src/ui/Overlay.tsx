@@ -15,6 +15,10 @@ export const Overlay = () => {
 
   return (
     <div className="overlay">
+      {/* Only drawn in the stacked layout, where the copy sits over the scene
+          instead of beside it and needs something to be legible against. */}
+      <div className="overlay__scrim" aria-hidden="true" />
+
       <header className="topbar">
         <span className="topbar__name">
           {PROFILE.name} — {PROFILE.role}

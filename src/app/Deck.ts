@@ -7,6 +7,14 @@ import { SLIDES } from '../content/slides'
 const WHEEL_THRESHOLD = 120
 const INPUT_COOLDOWN = 0.35
 
+/** True when the event happened inside a copy panel that has room to scroll. */
+const scrollableCopyUnder = (target: EventTarget | null): boolean => {
+  if (!(target instanceof Element)) return false
+  const slide = target.closest('.slide')
+  if (!slide) return false
+  return slide.scrollHeight - slide.clientHeight > 4
+}
+
 /**
  * The boundary between React and the canvas.
  *
@@ -65,11 +73,27 @@ export class Deck {
     window.addEventListener('keydown', this.onKeyDown)
     window.addEventListener('wheel', this.onWheel, { passive: true })
     window.addEventListener('resize', this.onResize)
+    // Some mobile browsers settle the viewport after `resize` on a rotation,
+    // so the orientation event gets its own, later pass at the same handler.
+    window.addEventListener('orientationchange', this.onResize)
     window.addEventListener('hashchange', this.onHashChange)
     host.addEventListener('touchstart', this.onTouchStart, { passive: true })
     host.addEventListener('touchend', this.onTouchEnd, { passive: true })
 
     this.engine.start()
+
+    if (import.meta.env.DEV) {
+      // Framing bugs are invisible from the outside: a station that looks
+      // wrongly placed could be a bad shot, a bad aspect or a stale travel.
+      // This lets a screenshot run ask the deck what it actually did.
+      ;(window as unknown as { deck: unknown }).deck = {
+        camera: this.engine.camera,
+        scene: this.engine.scene,
+        world: this.world,
+        aspect: () => this.aspect,
+        shotFor: (i: number) => this.world.shotFor(i, this.aspect),
+      }
+    }
   }
 
   private get aspect(): number {
@@ -124,6 +148,9 @@ export class Deck {
   }
 
   private onWheel = (event: WheelEvent): void => {
+    // On a narrow window the copy is a scrolling panel. A wheel inside it is
+    // someone reading, not someone advancing the deck.
+    if (scrollableCopyUnder(event.target)) return
     this.wheelAccumulator += event.deltaY
     if (Math.abs(this.wheelAccumulator) < WHEEL_THRESHOLD) return
     this.step(this.wheelAccumulator > 0 ? 1 : -1)
@@ -142,9 +169,12 @@ export class Deck {
     if (!touch) return
     const dx = touch.clientX - this.touchStartX
     const dy = touch.clientY - this.touchStartY
-    if (Math.abs(dx) < 48 && Math.abs(dy) < 48) return
-    if (Math.abs(dx) > Math.abs(dy)) this.step(dx < 0 ? 1 : -1)
-    else this.step(dy < 0 ? 1 : -1)
+
+    // Horizontal only, always. On a phone the copy is a scrolling panel, and a
+    // vertical swipe that sometimes scrolls and sometimes changes the slide is
+    // the kind of control nobody can use while talking.
+    if (Math.abs(dx) < 56 || Math.abs(dx) < Math.abs(dy) * 1.4) return
+    this.step(dx < 0 ? 1 : -1)
   }
 
   private onHashChange = (): void => {
@@ -156,9 +186,9 @@ export class Deck {
     // re-aim the camera — gently, and only once the dragging has stopped.
     window.clearTimeout(this.resizeTimer)
     this.resizeTimer = window.setTimeout(() => {
-      const { index, traveling } = deckApi.getState()
-      if (traveling) return
-      this.rig.travelTo(this.world.shotFor(index, this.aspect), 0)
+      // Re-aim even mid-travel: a rotation changes where the subject has to
+      // sit, and the rig picks the new shot up from wherever it is now.
+      this.rig.travelTo(this.world.shotFor(deckApi.getState().index, this.aspect), 0)
     }, 180)
   }
 
@@ -166,6 +196,7 @@ export class Deck {
     window.removeEventListener('keydown', this.onKeyDown)
     window.removeEventListener('wheel', this.onWheel)
     window.removeEventListener('resize', this.onResize)
+    window.removeEventListener('orientationchange', this.onResize)
     window.removeEventListener('hashchange', this.onHashChange)
     this.host.removeEventListener('touchstart', this.onTouchStart)
     this.host.removeEventListener('touchend', this.onTouchEnd)

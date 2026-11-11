@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import type { CameraShot, FrameContext, Station, StationFactory } from './types'
 import { SLIDES } from '../content/slides'
 import { PALETTE } from './palette'
+import { distanceScaleFor, liftFractionFor, visibleHeight } from '../camera/framing'
 import { makeRng } from '../utils/math'
 
 import { createHero } from './stations/hero'
@@ -39,6 +40,7 @@ const CULL_DISTANCE = 230
 
 const _right = new THREE.Vector3()
 const _forward = new THREE.Vector3()
+const _cameraUp = new THREE.Vector3()
 const _up = new THREE.Vector3(0, 1, 0)
 
 /**
@@ -65,6 +67,7 @@ export class World {
       focus: 0,
       pointer: new THREE.Vector2(),
       camera,
+      aspect: camera.aspect,
     }
 
     SLIDES.forEach((slide, i) => {
@@ -103,9 +106,15 @@ export class World {
   }
 
   /**
-   * The parked camera shot for a slide, panned sideways so the DOM copy and
-   * the subject do not fight. On a narrow window the pan is dropped — there is
-   * no room beside the text, so the subject sits behind it instead.
+   * The parked camera shot for a slide, fitted to the window it has to play in.
+   *
+   * Wide window: the camera pans sideways by the station's `bias`, so the copy
+   * sits beside the subject rather than on top of it.
+   *
+   * Narrow window: the copy moves to the bottom of the screen instead, so the
+   * sideways pan is dropped, the camera backs off until the subject fits the
+   * thinner field, and it pans *down* — which lifts the subject into the clear
+   * air above the copy.
    */
   shotFor(index: number, aspect: number): CameraShot {
     const station = this.stations[index]
@@ -114,16 +123,33 @@ export class World {
       target: station.shot.target.clone(),
     }
 
-    const bias = station.bias ?? 0
-    if (bias === 0) return shot
-
-    const scale = aspect < 1.15 ? 0 : Math.min(1, (aspect - 1.15) / 0.5)
-    if (scale === 0) return shot
-
     _forward.subVectors(shot.target, shot.position).normalize()
     _right.crossVectors(_forward, _up).normalize()
-    shot.position.addScaledVector(_right, -bias * scale)
-    shot.target.addScaledVector(_right, -bias * scale)
+
+    // Back off along the station's own view axis, which keeps the pitch the
+    // author chose and only changes how much of the subject is in shot.
+    const distanceScale = distanceScaleFor(aspect)
+    if (distanceScale !== 1) {
+      shot.position.sub(shot.target).multiplyScalar(distanceScale).add(shot.target)
+    }
+
+    const bias = station.bias ?? 0
+    const biasScale = aspect < 1.15 ? 0 : Math.min(1, (aspect - 1.15) / 0.5)
+    if (bias !== 0 && biasScale > 0) {
+      shot.position.addScaledVector(_right, -bias * biasScale)
+      shot.target.addScaledVector(_right, -bias * biasScale)
+    }
+
+    const lift = liftFractionFor(aspect)
+    if (lift > 0) {
+      // Panning the camera down moves the subject up the screen.
+      _cameraUp.crossVectors(_right, _forward).normalize()
+      const distance = shot.position.distanceTo(shot.target)
+      const drop = visibleHeight(distance, aspect) * lift
+      shot.position.addScaledVector(_cameraUp, -drop)
+      shot.target.addScaledVector(_cameraUp, -drop)
+    }
+
     return shot
   }
 
@@ -145,6 +171,7 @@ export class World {
     this.context.dt = dt
     this.context.time = time
     this.context.pointer.copy(pointer)
+    this.context.aspect = camera.aspect
 
     for (let i = 0; i < this.stations.length; i += 1) {
       const station = this.stations[i]

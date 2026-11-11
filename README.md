@@ -19,7 +19,9 @@ npm run build      # dist/, static — drop it on any host
 | `←` `↑` `Backspace` | Previous station |
 | `1`–`9`, `0` | Jump straight to a slide — for when an interviewer asks about one thing |
 | `Home` / `End` | First / last |
-| Scroll, swipe | Next / previous |
+| Scroll | Next / previous |
+| Horizontal swipe | Next / previous |
+| Vertical swipe | Scrolls the copy panel on a phone — never changes the slide |
 | Mouse move | Parallax; on the stack station it nudges the spin |
 
 The address bar carries the slide: `…/#luciad` opens on the geospatial station.
@@ -27,7 +29,8 @@ That makes a follow-up email able to point at one slide, and it is how the
 screenshot script drives the deck.
 
 ```bash
-npm run shots      # dev server must be running; writes shots/*.png
+npm run shots        # dev server must be running; writes shots/*.png
+npm run shots:phone  # the same eleven at 390×844
 ```
 
 ## Architecture
@@ -91,6 +94,33 @@ because there is no room beside the text.
 | How I work | `howiwork` | spec → agent → review → ship, with the loop back from review |
 | Contact | `contact` | The title core, opened out into five spokes |
 
+## On a phone
+
+Under 900px the deck stops putting the copy beside the subject and stacks:
+the scene keeps the top of the screen, the copy becomes a panel across the
+bottom that scrolls on its own, and the camera is re-framed to match.
+
+[`camera/framing.ts`](src/camera/framing.ts) owns that re-framing, and both the
+engine and the world read it from there so the two cannot drift apart. A phone
+held upright has about a quarter of the horizontal field of a 16:9 screen, so:
+
+- the lens opens as the window narrows, winning some of the angle back without
+  the distortion a very wide lens gives;
+- the camera backs off for the rest, until the subject spans the width it was
+  authored for;
+- the camera then pans **down**, which lifts the subject into the clear air
+  above the copy. The lift is matched to the `--mobile-copy` share in the
+  stylesheet — change one and change the other.
+
+Gestures are split by axis on purpose: horizontal swipes move the deck,
+vertical ones scroll the copy. A gesture that sometimes scrolls and sometimes
+changes the slide is the kind of control nobody can use while talking.
+
+`npm run shots:phone` renders the stacked layout through real device emulation,
+not a narrow window — Windows refuses to open a browser window under 500px, so
+`--window-size=390,844` silently lays out at 500px and crops, which makes a
+phone screenshot a convincing lie.
+
 ## Deliberate choices worth knowing
 
 - **Fonts are bundled, not fetched.** An interview room is exactly where a
@@ -100,6 +130,13 @@ because there is no room beside the text.
   window, does not survive someone else's projector and cannot be read by a
   screen reader. The overlay is pointer-transparent, so a drag that starts over
   the copy still reaches the scene.
+- **The canvas carries an explicit CSS size** (`setSize(w, h, true)`), and is
+  positioned with `top`/`left` rather than `inset: 0`. A canvas is a replaced
+  element: absolutely positioned with `width: auto` it takes its *intrinsic*
+  size — the drawing buffer — and the `right`/`bottom` offsets are dropped as
+  over-constrained. At `devicePixelRatio` 1 the buffer happens to match the
+  viewport and nothing looks wrong, which is exactly why this survives a
+  desktop review and breaks on every phone and retina laptop.
 - **Labels are billboarded through the parent's world rotation**, not by copying
   the camera's quaternion — every station is rotated into its place on the ring,
   so the naive version leaves every label turned by the station's yaw.

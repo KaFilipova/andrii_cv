@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173",
     "typecheck": "tsc -b",
-    "shots": "node scripts/capture.mjs http://localhost:5173/ shots"
+    "shots": "node scripts/capture.mjs http://localhost:5173/ shots",
+    "shots:phone": "node scripts/capture.mjs http://localhost:5173/ shots-phone --viewport=390x844"
   },
   "dependencies": {
     "react": "^19.2.0",

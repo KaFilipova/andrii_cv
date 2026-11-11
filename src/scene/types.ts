@@ -12,6 +12,11 @@ export interface FrameContext {
   pointer: THREE.Vector2
   /** The live camera — stations use it to billboard labels. */
   camera: THREE.PerspectiveCamera
+  /**
+   * Viewport aspect. A station reads it when its shape only works one way up:
+   * a ring seen from a shallow angle is a line, and a phone frame is tall.
+   */
+  aspect: number
 }
 
 export interface CameraShot {

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { PALETTE } from '../scene/palette'
+import { fovForAspect } from '../camera/framing'
 import { damp } from '../utils/math'
 
 export interface EngineHooks {
@@ -33,7 +34,15 @@ export class Engine {
 
     this.canvas = document.createElement('canvas')
     this.canvas.style.position = 'absolute'
-    this.canvas.style.inset = '0'
+    this.canvas.style.top = '0'
+    this.canvas.style.left = '0'
+    // No `inset: 0` here. A canvas is a replaced element, so with `width: auto`
+    // an absolutely positioned one takes its *intrinsic* size — the drawing
+    // buffer — and the `right`/`bottom` offsets are dropped as over-constrained.
+    // At devicePixelRatio 1 the buffer happens to match the viewport and the
+    // bug is invisible; on a 2× phone the scene is drawn into a box twice the
+    // width of the screen, anchored top-left. `setSize(…, true)` below writes
+    // the CSS size explicitly, which is what actually keeps the two in step.
     host.appendChild(this.canvas)
 
     this.renderer = new THREE.WebGLRenderer({
@@ -93,15 +102,20 @@ export class Engine {
   private resize(): void {
     const width = this.host.clientWidth || window.innerWidth
     const height = this.host.clientHeight || window.innerHeight
-    // Capping DPR at 2 keeps a 4K laptop screen from quadrupling the fill cost
-    // for a scene whose detail is lines rather than texture.
-    const dpr = Math.min(window.devicePixelRatio || 1, 2)
+    const aspect = width / Math.max(height, 1)
+
+    // Capping DPR keeps a 4K laptop — or a 3× phone — from multiplying the fill
+    // cost of a scene whose detail is lines rather than texture. Phones get the
+    // tighter cap: the extra pixels buy nothing on thin strokes and cost frames.
+    const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false
+    const dpr = Math.min(window.devicePixelRatio || 1, coarse ? 1.75 : 2)
     this.renderer.setPixelRatio(dpr)
-    this.renderer.setSize(width, height, false)
-    this.camera.aspect = width / Math.max(height, 1)
-    // A portrait window loses horizontal framing; widening the FOV keeps the
-    // station in shot instead of cropping it.
-    this.camera.fov = this.camera.aspect < 1 ? 58 : 42
+    this.renderer.setSize(width, height, true)
+
+    this.camera.aspect = aspect
+    // A narrow window loses horizontal field; the lens opens to win some back
+    // and `World.shotFor` backs the camera off for the rest.
+    this.camera.fov = fovForAspect(aspect)
     this.camera.updateProjectionMatrix()
   }
 

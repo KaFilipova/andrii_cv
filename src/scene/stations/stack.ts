@@ -128,12 +128,15 @@ export const createStack: StationFactory = (anchor) => {
       position: anchor.clone().add(new THREE.Vector3(0, 5.6, 21)),
       target: anchor.clone(),
     },
-    update({ dt, time, focus, pointer, camera }) {
+    update({ dt, time, focus, pointer, camera, aspect }) {
       // Pointer nudges the spin rather than taking control of it: the ring keeps
       // its own motion during the talk and answers when someone reaches for it.
       drag += (pointer.x * 0.5 - drag) * Math.min(1, dt * 2.2)
       spinner.rotation.y += dt * (0.08 + drag * 0.5 * focus)
-      spinner.rotation.x = 0.1 + pointer.y * 0.12 * focus
+      // Nearly edge-on the orbits collapse into a line. A tall frame has the
+      // room to look down on them, and that is where they read as rings.
+      const tilt = aspect < 1.05 ? 0.46 : 0.1
+      spinner.rotation.x = tilt + pointer.y * 0.12 * focus
 
       core.rotation.y -= dt * 0.25
       core.rotation.x = Math.sin(time * 0.3) * 0.2
