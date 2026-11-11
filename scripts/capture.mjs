@@ -30,7 +30,10 @@ const outDir = resolve(positional[1] ?? 'shots')
 const [width, height] = (flag('viewport') ?? process.env.CAPTURE_VIEWPORT ?? '1600x900')
   .split('x')
   .map(Number)
-const settleMs = Number(process.env.CAPTURE_SETTLE ?? 3200)
+// Generous on purpose: headless Chrome renders this through swiftshader at a
+// few frames per second, so a short settle catches animations and async text
+// before they have landed and quietly produces a screenshot that is a lie.
+const settleMs = Number(process.env.CAPTURE_SETTLE ?? 6000)
 const mobile = width < 900
 const deviceScaleFactor = mobile ? 2 : 1
 const port = Number(process.env.CAPTURE_PORT ?? 9333)

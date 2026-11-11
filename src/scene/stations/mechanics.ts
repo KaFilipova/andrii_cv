@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, label, marker, segment, solidBox, wireBox } from '../builders'
+import { billboard, disposeTree, keyLight, label, marker, segment, solidBox, wireBox } from '../builders'
 import { clamp, easeInOutCubic } from '../../utils/math'
 
 const CYCLE = 9.5
@@ -132,9 +132,7 @@ export const createMechanics: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.5)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 1.1)
-  key.position.set(3, 8, 9)
-  group.add(key)
+  keyLight(group, 1.1, 3, 8, 9)
 
   let clock = 0
   let shownPhase = -1

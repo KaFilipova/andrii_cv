@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, label, marker, segment, wireBox } from '../builders'
+import { billboard, disposeTree, keyLight, label, marker, segment, wireBox } from '../builders'
 
 interface Node {
   group: THREE.Group
@@ -100,9 +100,7 @@ export const createHowIWork: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.5)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 0.9)
-  key.position.set(2, 7, 8)
-  group.add(key)
+  keyLight(group, 0.9, 2, 7, 8)
 
   const start = nodes[0].position.x
   const end = nodes[nodes.length - 1].position.x

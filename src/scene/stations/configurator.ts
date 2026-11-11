@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, gridFloor, label, marker, solidBox, wireBox } from '../builders'
+import { billboard, disposeTree, gridFloor, keyLight, label, marker, solidBox, wireBox } from '../builders'
 import { clamp, easeOutCubic, makeRng } from '../../utils/math'
 
 interface Part {
@@ -162,9 +162,7 @@ export const createConfigurator: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.55)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 1.25)
-  key.position.set(6, 11, 8)
-  group.add(key)
+  keyLight(group, 1.9, 6, 11, 8)
   const warm = new THREE.PointLight(PALETTE.accentWarm, 90, 26, 2)
   warm.position.set(-5, 3, 5)
   group.add(warm)

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, label, marker, segment } from '../builders'
+import { billboard, disposeTree, keyLight, label, marker, segment } from '../builders'
 
 interface Layer {
   slab: THREE.Mesh
@@ -123,9 +123,7 @@ export const createTradeoffs: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.55)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 1.05)
-  key.position.set(-4, 9, 8)
-  group.add(key)
+  keyLight(group, 1.05, -4, 9, 8)
 
   let travel = 0
 

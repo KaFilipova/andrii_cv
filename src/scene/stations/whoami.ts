@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, gridFloor, label, solidBox, wireBox } from '../builders'
+import { billboard, disposeTree, gridFloor, keyLight, label, solidBox, wireBox } from '../builders'
 
 interface Monolith {
   group: THREE.Group
@@ -80,9 +80,7 @@ export const createWhoAmI: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.55)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 1.1)
-  key.position.set(4, 9, 7)
-  group.add(key)
+  keyLight(group, 1.1, 4, 9, 7)
   const fill = new THREE.PointLight(PALETTE.accentWarm, 60, 30, 2)
   fill.position.set(-5, 2.5, 4)
   group.add(fill)

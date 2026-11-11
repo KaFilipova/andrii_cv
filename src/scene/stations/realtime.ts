@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, gridFloor, label, marker, solidBox, wireBox } from '../builders'
+import { billboard, disposeTree, gridFloor, keyLight, label, marker, solidBox, wireBox } from '../builders'
 import { clamp, easeInOutCubic, makeRng } from '../../utils/math'
 
 const CYCLE = 6.5
@@ -161,9 +161,7 @@ export const createRealtime: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.5)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 1.1)
-  key.position.set(-3, 9, 8)
-  group.add(key)
+  keyLight(group, 1.1, -3, 9, 8)
 
   let clock = 0
 

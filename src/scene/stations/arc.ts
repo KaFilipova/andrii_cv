@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, label, marker, segment, solidBox } from '../builders'
+import { billboard, disposeTree, keyLight, label, marker, segment, solidBox } from '../builders'
 import { clamp, easeOutBack } from '../../utils/math'
 
 interface Bar {
@@ -115,9 +115,7 @@ export const createArc: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.5)
   group.add(ambient)
-  const key = new THREE.DirectionalLight(PALETTE.ink, 1.0)
-  key.position.set(2, 8, 9)
-  group.add(key)
+  keyLight(group, 1.0, 2, 8, 9)
 
   let grown = 0
 

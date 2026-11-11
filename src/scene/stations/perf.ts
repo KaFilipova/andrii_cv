@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, label } from '../builders'
+import { billboard, disposeTree, keyLight, label } from '../builders'
 import { clamp, makeRng } from '../../utils/math'
 
 /** Objects in the field. Large enough that the point being made is not rhetorical. */
@@ -126,7 +126,10 @@ export const createPerf: StationFactory = (anchor) => {
   readout.position.set(0, 11.5, 0)
   group.add(readout)
 
-  const drawnLine = label('—', {
+  // Starts in the real format rather than on a placeholder: troika syncs text
+  // asynchronously, so a dash here reads as a broken counter in any frame
+  // captured before the first tick lands.
+  const drawnLine = label(`   0 / ${COUNT} SHADED`, {
     size: 0.92,
     color: PALETTE.accent,
     mono: true,
@@ -169,32 +172,54 @@ export const createPerf: StationFactory = (anchor) => {
   // having to know what `World` did to the camera.
   group.add(bar)
 
+  const BAR_HEIGHT = 1.1
+  /** Keeps a filled segment strictly inside the track on every axis. */
+  const SEGMENT_INSET = 0.12
+
   const track = new THREE.Mesh(
-    new THREE.BoxGeometry(BAR_WIDTH, 1.1, 0.9),
+    new THREE.BoxGeometry(BAR_WIDTH, BAR_HEIGHT, 0.9),
     new THREE.MeshBasicMaterial({
       color: PALETTE.deep,
       transparent: true,
       opacity: 0.85,
+      depthWrite: false,
       toneMapped: false,
     }),
   )
+  track.renderOrder = 1
   bar.add(track)
 
   const trackEdge = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(BAR_WIDTH, 1.1, 0.9)),
-    new THREE.LineBasicMaterial({ color: PALETTE.steel, transparent: true, opacity: 0.4 }),
+    // A hair larger than the track: an outline sitting exactly on the faces it
+    // outlines is the same stitching problem in line form.
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(BAR_WIDTH + 0.02, BAR_HEIGHT + 0.02, 0.92)),
+    new THREE.LineBasicMaterial({
+      color: PALETTE.steel,
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false,
+    }),
   )
+  trackEdge.renderOrder = 3
   bar.add(trackEdge)
 
   let cursor = -BAR_WIDTH / 2
   COSTS.forEach((b) => {
     const width = (b.ms / FRAME_MS) * BAR_WIDTH
     const mesh = new THREE.Mesh(
-      new THREE.BoxGeometry(1, 1.1, 0.92),
-      new THREE.MeshBasicMaterial({ color: b.color, transparent: true, opacity: 0.75, toneMapped: false }),
+      new THREE.BoxGeometry(1, BAR_HEIGHT - SEGMENT_INSET * 2, 0.9 - SEGMENT_INSET),
+      new THREE.MeshBasicMaterial({
+        color: b.color,
+        transparent: true,
+        opacity: 0.75,
+        depthWrite: false,
+        toneMapped: false,
+      }),
     )
-    mesh.scale.x = width
+    // A hairline between neighbours, so two segments never share a face either.
+    mesh.scale.x = Math.max(width - SEGMENT_INSET, 0.01)
     mesh.position.x = cursor + width / 2
+    mesh.renderOrder = 2
     bar.add(mesh)
 
     const tag = new THREE.Group()
@@ -244,9 +269,7 @@ export const createPerf: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.34)
   group.add(ambient)
-  const sun = new THREE.DirectionalLight(PALETTE.ink, 0.6)
-  sun.position.set(-10, 16, 8)
-  group.add(sun)
+  keyLight(group, 0.6, -10, 16, 8)
 
   /** How far in front of the camera the panel floats, metres. */
   const PANEL_DISTANCE = 28
@@ -323,23 +346,33 @@ export const createPerf: StationFactory = (anchor) => {
         drawnLine.sync()
       }
 
-      // The budget breathes rather than sits still — a frame cost is a moving
-      // number, and a frozen bar would read as a diagram instead of a measure.
-      let x = -BAR_WIDTH / 2
-      budgets.forEach((b, i) => {
-        const wobble = 1 + Math.sin(time * (0.7 + i * 0.23) + i) * 0.05
-        const width = (b.ms / FRAME_MS) * BAR_WIDTH * wobble
-        b.mesh.scale.x = width
-        b.mesh.position.x = x + width / 2
-        b.tag.position.x = x + width / 2
-        x += width
-        const base = b.mesh.material as THREE.MeshBasicMaterial
-        base.opacity = 0.55 + clamp(focus, 0, 1) * 0.3
-      })
+      // The panel is anchored to the camera rather than to the world, so it is
+      // only allowed to exist while this station owns the camera. A station
+      // keeps updating until it falls outside `CULL_DISTANCE`, so without this
+      // gate the panel follows the viewer onto the neighbouring slides and
+      // lands on top of someone else's scene.
+      const parked = focus > 0.35
+      bar.visible = parked
+      if (parked) {
+        // The budget breathes rather than sitting still — a frame cost is a
+        // moving number, and a frozen bar would read as a diagram instead.
+        let x = -BAR_WIDTH / 2
+        budgets.forEach((b, i) => {
+          const wobble = 1 + Math.sin(time * (0.7 + i * 0.23) + i) * 0.05
+          const width = (b.ms / FRAME_MS) * BAR_WIDTH * wobble
+          b.mesh.scale.x = Math.max(width - SEGMENT_INSET, 0.01)
+          b.mesh.position.x = x + width / 2
+          b.tag.position.x = x + width / 2
+          x += width
+          const base = b.mesh.material as THREE.MeshBasicMaterial
+          base.opacity = 0.55 + clamp(focus, 0, 1) * 0.3
+        })
 
-      // One billboard for the panel; its labels are children and inherit it.
-      placePanel(camera, aspect)
-      billboard(bar, camera)
+        // One billboard for the panel; its labels are children and inherit it.
+        placePanel(camera, aspect)
+        billboard(bar, camera)
+      }
+
       billboard(readout, camera)
 
       group.rotation.y = Math.sin(time * 0.05) * 0.07 * focus

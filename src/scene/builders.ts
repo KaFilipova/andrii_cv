@@ -47,6 +47,33 @@ export const label = (text: string, options: LabelOptions = {}): Text => {
   return t
 }
 
+/**
+ * A key light that keeps the direction its station was authored with.
+ *
+ * three.js aims a DirectionalLight from its position at `light.target`, and the
+ * default target is an Object3D that sits at the world origin. Every station is
+ * parked ~165 m out on the ring, so that default aims every "sun" at the centre
+ * of the ring instead of at its own subject — and because the ring re-spaces
+ * itself whenever a slide is added, the whole deck is silently re-lit by an
+ * unrelated edit. Adding the target to the station group pins the direction to
+ * the local frame, where the author chose it.
+ */
+export const keyLight = (
+  parent: THREE.Object3D,
+  intensity: number,
+  x: number,
+  y: number,
+  z: number,
+  color: THREE.Color = PALETTE.ink,
+): THREE.DirectionalLight => {
+  const light = new THREE.DirectionalLight(color, intensity)
+  light.position.set(x, y, z)
+  light.target.position.set(0, 0, 0)
+  parent.add(light)
+  parent.add(light.target)
+  return light
+}
+
 /** Outline-only box — the deck's default way of drawing volume. */
 export const wireBox = (
   width: number,

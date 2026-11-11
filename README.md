@@ -148,6 +148,19 @@ phone screenshot a convincing lie.
   point at world x = 0 drifts off-centre in proportion to how near it is. The
   panel therefore projects the station, picks a point below it, and puts itself
   on that ray — which also keeps it clear of the copy on a stacked layout.
+  The flip side is that anything anchored to the live camera has to be switched
+  off when its station is not the one being looked at: a station keeps running
+  until it falls outside `CULL_DISTANCE`, so an ungated panel rides the camera
+  onto the neighbouring slides and draws on top of their scenes.
+- **Every key light owns its target.** three.js aims a `DirectionalLight` from
+  its position at `light.target`, and the default target sits at the world
+  origin. Stations are parked ~165 m out on the ring, so the default aims every
+  "sun" at the centre of the ring rather than at its own subject — and since
+  the ring re-spaces itself whenever a slide is added, adding one station
+  silently re-lights the whole deck. `builders.keyLight()` adds the target to
+  the station group, which pins the direction to the local frame where it was
+  authored. The intensities were originally tuned against the broken aim, so
+  they were re-checked station by station after the fix.
 - **Labels are billboarded through the parent's world rotation**, not by copying
   the camera's quaternion — every station is rotated into its place on the ring,
   so the naive version leaves every label turned by the station's yaw.

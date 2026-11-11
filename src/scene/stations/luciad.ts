@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { StationFactory } from '../types'
 import { PALETTE } from '../palette'
-import { billboard, disposeTree, label, ring, solidBox } from '../builders'
+import { billboard, disposeTree, keyLight, label, ring, solidBox } from '../builders'
 import { clamp, easeOutCubic, makeRng } from '../../utils/math'
 
 interface Placement {
@@ -176,9 +176,7 @@ export const createLuciad: StationFactory = (anchor) => {
 
   const ambient = new THREE.HemisphereLight(PALETTE.accent, PALETTE.bg, 0.3)
   group.add(ambient)
-  const sun = new THREE.DirectionalLight(PALETTE.ink, 0.72)
-  sun.position.set(-8, 14, 6)
-  group.add(sun)
+  keyLight(group, 0.72, -8, 14, 6)
   const warm = new THREE.PointLight(PALETTE.accentWarm, 110, 28, 2)
   warm.position.set(2, 7, 2)
   group.add(warm)
